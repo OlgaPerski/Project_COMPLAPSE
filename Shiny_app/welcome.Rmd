@@ -1,0 +1,18 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Welcome to Project COMPLAPSE
+
+This R Shiny application was built to allow readers to explore the formal, dynamical systems model developed as part of Project COMPLAPSE.
+
+This R Shiny application includes the following tabs:
+
+- Simulation Scenarios (contains a few pre-specified simulation scenarios)
+- Simulation Environment (environment in which all model parameters can be tuned via sliders)
