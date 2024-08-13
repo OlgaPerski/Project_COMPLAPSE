@@ -81,7 +81,7 @@ sens_subset_1 <- sens_model_output[1:5]
 sens_subset_1_plot_list <- lapply(seq_along(sens_subset_1), function(i) {
   ggplot(sens_subset_1[[i]], aes(x = nTime)) +
     geom_line(aes(y = ES), linewidth = 0.75, colour = "black", linetype = "dashed") +
-    geom_point(aes(y = smok), colour = "darkred", shape = 1, stroke = 1.2) +
+    geom_point(aes(y = smok), colour = "darkred", shape = 1, stroke = 0.5) +
     labs(title = paste(i),
          x = "Time",
          y = "Experienced stress") +
@@ -89,8 +89,8 @@ sens_subset_1_plot_list <- lapply(seq_along(sens_subset_1), function(i) {
     ylim(0, 10)
 })
 
-sens_subset_1_combined_plot <- plot_grid(plotlist = sens_subset_1_plot_list, nrow = 2)
-cowplot::save_plot(plot = sens_subset_1_combined_plot, filename = here("scripts", "sens_stress_combined_plot.png"), base_height = 8, base_width = 24)
+sens_subset_1_combined_plot <- plot_grid(plotlist = sens_subset_1_plot_list, ncol = 2)
+cowplot::save_plot(plot = sens_subset_1_combined_plot, filename = here("scripts", "sens_stress_combined_plot.png"), base_height = 8, base_width = 6)
 
 # cigarette cues and cue reactivity ---------------------------------------
 
@@ -99,7 +99,7 @@ sens_subset_2 <- sens_model_output[6:10]
 sens_subset_2_plot_list <- lapply(seq_along(sens_subset_2), function(i) {
   ggplot(sens_subset_2[[i]], aes(x = nTime)) +
     geom_line(aes(y = CR), linewidth = 0.75, colour = "black", linetype = "dashed") +
-    geom_point(aes(y = smok), colour = "darkred", shape = 1, stroke = 1.2) +
+    geom_point(aes(y = smok), colour = "darkred", shape = 1, stroke = 0.5) +
     labs(title = paste(i),
          x = "Time",
          y = "Cue reactivity") +
@@ -107,8 +107,8 @@ sens_subset_2_plot_list <- lapply(seq_along(sens_subset_2), function(i) {
     ylim(0, 10)
 })
 
-sens_subset_2_combined_plot <- plot_grid(plotlist = sens_subset_2_plot_list, nrow = 2)
-cowplot::save_plot(plot = sens_subset_2_combined_plot, filename = here("scripts", "sens_cues_combined_plot.png"), base_height = 8, base_width = 24)
+sens_subset_2_combined_plot <- plot_grid(plotlist = sens_subset_2_plot_list, ncol = 2)
+cowplot::save_plot(plot = sens_subset_2_combined_plot, filename = here("scripts", "sens_cues_combined_plot.png"), base_height = 8, base_width = 6)
 
 # perceived permissibility of smoking -------------------------------------
 

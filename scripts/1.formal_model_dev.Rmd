@@ -737,7 +737,6 @@ Assumptions about variable:
 We formalise strategy preference as:
 
 $$
-
 SP(t) = \begin{bmatrix}
 \text{Pref}_{smok} = \lambda_1 C(t) - \lambda_2 M(t) - \lambda_3 CoS(t) \\
 \text{Pref}_{no-smok} = \lambda_2 M(t) - \lambda_1 C(t) \\

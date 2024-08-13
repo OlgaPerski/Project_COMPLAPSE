@@ -5,18 +5,24 @@ library(DT)
 library(shiny)
 library(shinydashboard)
 
-source(here("scripts", "2_model_functions.R"))
-
-scenarios <- read_csv(here("Shiny_app", "scenarios.csv"))
-
-rmarkdown::render(here("Shiny_app", "welcome.Rmd"), output_format = "html_document", output_file = "welcome.html")
+source(here("www", "2_model_functions.R"))
+scenarios <- read_csv(here("www", "scenarios.csv"))
+#rmarkdown::render(input = here("www", "welcome.Rmd"), output_format = "html_document", output_file = here("www", "welcome.html"))
 
 # define UI
 
 ui <- fluidPage(
   navbarPage("COMPLAPSE Simulation Tool", fluid = TRUE,
              tabPanel("Welcome",
-                      htmlOutput("welcome")),
+                      fluidPage(
+                        tags$h2("Welcome to Project COMPLAPSE"),
+                        tags$p("This R Shiny application was built to allow readers to explore the formal, dynamical systems model developed as part of Project COMPLAPSE."),
+                        tags$p("This R Shiny application includes the following tabs:"),
+                        tags$ul(
+                          tags$li(tags$strong("Simulation Scenarios"), " (contains a few pre-specified simulation scenarios)"),
+                          tags$li(tags$strong("Simulation Environment"), " (environment in which all model parameters can be tuned via sliders)")
+                        )
+                      )),
              tabPanel("Simulation Scenarios",
                       tags$style(HTML("
            .scenario-box {
