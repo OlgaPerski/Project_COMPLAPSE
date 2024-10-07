@@ -1,6 +1,8 @@
 library(here)
 library(tidyverse)
 library(FME)
+library(ggplot2)
+library(cowplot)
 
 # prepare for sampling ----------------------------------------------------
 
@@ -186,8 +188,42 @@ print(lhs_df[23,])
 # parameter calibration ---------------------------------------------------
 
 relapse_obs <- rbinom(2880, 1, 0.009)
-prolapse_obs <- rbinom(2880, 1, 0.002)
+prolapse_obs <- rbinom(2880, 1, 0.001)
 abstinence_obs <- rbinom(2880, 1, 0)
+
+# plot the formalised phenomena
+
+phenomenon_1 <- ggplot() +
+  geom_line(data = tibble(nTime = 1:default_parameters$nTime,
+                          smok = relapse_obs), aes(x = nTime, y = smok), colour = "darkred", linewidth = 0.75) +
+  labs(title = "a) Relapse",
+       x = "Time",
+       y = "Lapse") +
+  scale_y_continuous(breaks = c(0, 1), limits = c(0, 1)) +
+  theme_bw()
+
+phenomenon_2 <- ggplot() +
+  geom_line(data = tibble(nTime = 1:default_parameters$nTime,
+                          smok = prolapse_obs), aes(x = nTime, y = smok), colour = "darkred", linewidth = 0.75) +
+  labs(title = "b) Prolapse",
+       x = "Time",
+       y = "Lapse") +
+  scale_y_continuous(breaks = c(0, 1), limits = c(0, 1)) +
+  theme_bw()
+
+phenomenon_3 <- ggplot() +
+  geom_line(data = tibble(nTime = 1:default_parameters$nTime,
+                          smok = abstinence_obs), aes(x = nTime, y = smok), colour = "darkred", linewidth = 0.75) +
+  labs(title = "c) Abstinence",
+       x = "Time",
+       y = "Lapse") +
+  scale_y_continuous(breaks = c(0, 1), limits = c(0, 1)) +
+  theme_bw()
+
+combined_phenomena_plot <- plot_grid(phenomenon_1, phenomenon_2, phenomenon_3, ncol = 1)
+cowplot::save_plot(plot = combined_phenomena_plot, filename = here("scripts", "combined_phenomena_plot.png"), base_height = 8, base_width = 12)
+
+# prepare for comparisons
 
 predicted <- lapply(lhs_model_output, function(df) df[, 6])
 
@@ -201,7 +237,7 @@ relapse_valid_indices <- which(sum_of_lapses > 20)
 
 relapse_min_valid_index <- relapse_valid_indices[which.min(unlist(relapse_diff)[relapse_valid_indices])]
 
-parameter_series_to_use <- 11
+parameter_series_to_use <- 105
 
 relapse_best_model <- lhs_df %>%
   mutate(id = c(1:1000)) %>%
@@ -241,7 +277,7 @@ prolapse_valid_indices <- which(sum_of_lapses > 2)
 
 prolapse_min_valid_index <- prolapse_valid_indices[which.min(unlist(prolapse_diff)[prolapse_valid_indices])]
 
-prolapse_parameter_series_to_use <- 12
+prolapse_parameter_series_to_use <- 2
 
 prolapse_best_model <- lhs_df %>%
   mutate(id = c(1:1000)) %>%
@@ -275,7 +311,7 @@ abstinence_diff <- lapply(predicted, function(col) sum(abs(col - abstinence_obs)
 
 abstinence_min_index <- which.min(unlist(abstinence_diff)) 
 
-abstinence_parameter_series_to_use <- 23
+abstinence_parameter_series_to_use <- 1
 
 abstinence_best_model <- lhs_df %>%
   mutate(id = c(1:1000)) %>%
@@ -298,12 +334,12 @@ abstinence_model_vis <- bind_rows(abstinence_model_vis, .id = "run")
 abstinence_plot <- ggplot() +
   geom_line(data = abstinence_model_vis, aes(x = nTime, y = smok, group = run), colour = "darkred", linetype = "dashed", linewidth = 0.7) +
   geom_line(data = tibble(nTime = 1:default_parameters$nTime,
-                          smok = abstinent_obs), aes(x = nTime, y = smok), colour = "black", linewidth = 0.75) +
-  labs(title = "Predicted vs. observed lapses (ABSTAIN)",
+                          smok = abstinence_obs), aes(x = nTime, y = smok), colour = "black", linewidth = 0.75) +
+  labs(title = "Predicted vs. observed lapses (ABSTINENCE)",
        x = "Time",
        y = "Lapse") +
   scale_y_continuous(breaks = c(0, 1), limits = c(0, 1)) +
   theme_bw()
 
-combined_plot <- plot_grid(relapse_plot, prolapse_plot, abstinence_plot, nrow = 1)
-cowplot::save_plot(plot = combined_plot, filename = here("scripts", "parameter_calibration_plot.png"), base_height = 8, base_width = 24)
+combined_plot <- plot_grid(relapse_plot, prolapse_plot, abstinence_plot, ncol = 1)
+cowplot::save_plot(plot = combined_plot, filename = here("scripts", "parameter_calibration_plot.png"), base_height = 8, base_width = 12)

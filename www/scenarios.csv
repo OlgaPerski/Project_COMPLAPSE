@@ -83,9 +83,3 @@ abstinent,kappa2,1.15004,abstinent
 abstinent,lambda1,0.3390391,abstinent
 abstinent,lambda2,0.4969108,abstinent
 abstinent,lambda3,0.2327931,abstinent
-abstinent,str_scenario,0,abstinent
-abstinent,NW_init,8,abstinent
-abstinent,ES_init,3,abstinent
-abstinent,CR_init,3,abstinent
-abstinent,St_init,0,abstinent
-abstinent,SE_init,6,abstinent

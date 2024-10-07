@@ -737,8 +737,11 @@ Assumptions about variable:
 We formalise strategy preference as:
 
 $$
+<<<<<<< HEAD
 DS(t) = \lambda_1 C(t) - (1-\lambda_1) M(t) \\
 \\
+=======
+>>>>>>> 5150f8a5a2d5d3f631e7299e1def267d7303d285
 SP(t) = \begin{bmatrix}
 \text{Pref}_{smok} = DS(t) - \lambda_2 CoS(t) \\
 \text{Pref}_{no-smok} = -DS(t) \\

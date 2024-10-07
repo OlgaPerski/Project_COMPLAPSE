@@ -29,7 +29,7 @@ ui <- fluidPage(
                           tags$li(tags$strong("Global Simulation Environment"), " (environment in which all model parameters can be tuned via sliders)")
                         )
                       )),
-             tabPanel("Pre-Specified Simulation Scenarios",
+             tabPanel("Simulation Scenarios",
                       tags$style(HTML("
            .scenario-box {
              background-color: #f9f9f9;

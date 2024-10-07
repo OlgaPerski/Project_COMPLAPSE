@@ -83,10 +83,18 @@ sens_subset_1 <- sens_model_output[1:5]
 
 sens_subset_1_plot_list <- lapply(seq_along(sens_subset_1), function(i) {
   ggplot(sens_subset_1[[i]], aes(x = nTime)) +
+<<<<<<< HEAD
     geom_line(aes(y = CR), linewidth = 0.75, colour = "black") +
     geom_point(data = subset(sens_subset_1[[i]], smok == 1), aes(y = smok), 
                colour = "darkred", shape = 1, stroke = 1.2) +
     labs(title = paste(i)) +
+=======
+    geom_line(aes(y = ES), linewidth = 0.75, colour = "black", linetype = "dashed") +
+    geom_point(aes(y = smok), colour = "darkred", shape = 1, stroke = 0.5) +
+    labs(title = paste(i),
+         x = "Time",
+         y = "Experienced stress") +
+>>>>>>> 5150f8a5a2d5d3f631e7299e1def267d7303d285
     theme_minimal() +
     theme(axis.title.x = element_blank(), 
           axis.title.y = element_blank(),
@@ -96,6 +104,10 @@ sens_subset_1_plot_list <- lapply(seq_along(sens_subset_1), function(i) {
 })
 
 sens_subset_1_combined_plot <- plot_grid(plotlist = sens_subset_1_plot_list, ncol = 2)
+<<<<<<< HEAD
+=======
+cowplot::save_plot(plot = sens_subset_1_combined_plot, filename = here("scripts", "sens_stress_combined_plot.png"), base_height = 8, base_width = 6)
+>>>>>>> 5150f8a5a2d5d3f631e7299e1def267d7303d285
 
 final_plot_subset_1 <- ggdraw(sens_subset_1_combined_plot) +
   draw_label("Time (in 5-minute ticks)", x = 0.5, y = 0.03, hjust = 0.5, vjust = 1, size = 12) +
@@ -109,10 +121,18 @@ sens_subset_2 <- sens_model_output[6:10]
 
 sens_subset_2_plot_list <- lapply(seq_along(sens_subset_2), function(i) {
   ggplot(sens_subset_2[[i]], aes(x = nTime)) +
+<<<<<<< HEAD
     geom_line(aes(y = SE), linewidth = 0.75, colour = "black") +
     geom_point(data = subset(sens_subset_2[[i]], smok == 1), aes(y = smok), 
                colour = "darkred", shape = 1, stroke = 1.2) +
     labs(title = paste(i)) +
+=======
+    geom_line(aes(y = CR), linewidth = 0.75, colour = "black", linetype = "dashed") +
+    geom_point(aes(y = smok), colour = "darkred", shape = 1, stroke = 0.5) +
+    labs(title = paste(i),
+         x = "Time",
+         y = "Cue reactivity") +
+>>>>>>> 5150f8a5a2d5d3f631e7299e1def267d7303d285
     theme_minimal() +
     theme(axis.title.x = element_blank(), 
           axis.title.y = element_blank(),
@@ -121,7 +141,12 @@ sens_subset_2_plot_list <- lapply(seq_along(sens_subset_2), function(i) {
     xlim(0, 2880)
 })
 
+<<<<<<< HEAD
 sens_subset_2_combined_plot <- plot_grid(plotlist = sens_subset_2_plot_list, nrow = 2)
+=======
+sens_subset_2_combined_plot <- plot_grid(plotlist = sens_subset_2_plot_list, ncol = 2)
+cowplot::save_plot(plot = sens_subset_2_combined_plot, filename = here("scripts", "sens_cues_combined_plot.png"), base_height = 8, base_width = 6)
+>>>>>>> 5150f8a5a2d5d3f631e7299e1def267d7303d285
 
 final_plot_subset_2 <- ggdraw(sens_subset_2_combined_plot) +
   draw_label("Time (in 5-minute ticks)", x = 0.5, y = 0.03, hjust = 0.5, vjust = 1, size = 12) +

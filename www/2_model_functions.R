@@ -298,7 +298,7 @@ simulate_data <- function(params) {
     P_no_smok <- round(probabilities[2], 3)
     
     P_reg <- round(probabilities[3], 3)
-    
+
     St[i, fun_St(P = P[[i]])] <- 1
     
   }
