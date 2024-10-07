@@ -1,9 +1,10 @@
 ---
-title: "Developing a Dynamic Theory of Smoking Lapse and Relapse"
+title: "Developing a Dynamic Model of Smoking Lapse and Relapse"
 output:
-  word_document: default
+  pdf_document: default
   html_document: default
-date: "2024-08-02"
+  word_document: default
+date: "2024-10-06"
 ---
 
 ```{r setup, include=FALSE}
@@ -21,7 +22,7 @@ library(cowplot)
 
 ```
 
-![Conceptual map of the prototheory](COMPLAPSE_mod_comp.png)
+![Visual overview of the prototheory](COMPLAPSE_mod_comp.png)
 
 # Variables and equations
 
@@ -50,31 +51,32 @@ For ease of use, the free parameters are labelled according to the Greek alphabe
 0 & \text{otherwise}
 \end{cases}\)
 2) Nicotine withdrawal: \(NW(t) = \beta_1 NW(t-1) - LAP(t) - \beta_2 St_{smok}(t) + \beta_3 St_{smok}(t-36)\)
-3) Stressors: \(S(t) \sim \text{Bernoulli}(\gamma_1)\)
+3) Stressors: \(S(t) \sim \text{Bernoulli}(\gamma_1(t))\)
 4) Experienced stress: \(ES(t) = \delta_1 ES(t-1) + \delta_2 S(t)\)
-5) Cigarette cues: \(CC(t) \sim \text{Bernoulli}(\epsilon_1)\)
+5) Cigarette cues: \(CC(t) \sim \text{Bernoulli}(\epsilon_1(t))\)
 6) Cue reactivity: \(CR(t) = \zeta_1 CR(t-1) + CC(t)\)
 7) Craving to smoke: \(C(t) = \eta_1 NW(t) + \eta_2 ES(t) + \eta_3 CR(t) - \eta_4 St_{reg}(t-1)\)
-8) Perceived permissibility of smoking: \(PE(t) \sim \text{Bernoulli}(\theta_1)\)
+8) Perceived permissibility of smoking: \(PE(t) \sim \text{Bernoulli}(\theta_1(t))\)
 9) Self-efficacy: \(SE(t) = \iota_1 SE(t-1) - \iota_2 St_{smok}(t-1)\)
 10) Motivation not to smoke: \(M(t) = \kappa_1 SE(t) - \kappa_2 PE(t)\)
-11) Strategy preference: \(SP(t) = \begin{bmatrix}
-\text{Pref}_{smok} = \lambda_1 C(t) - \lambda_2 M(t) - \lambda_3 CoS(t) \\
-\text{Pref}_{no-smok} = \lambda_2 M(t) - \lambda_1 C(t) \\
-\text{Pref}_{reg} = \lambda_2 M(t) - \lambda_1 C(t) - \lambda_4 PoR \\
+11) Strategy preference: \(DS(t) = \lambda_1 C(t) - (1-\lambda_1) M(t) \\
+SP(t) = \begin{bmatrix}
+\text{Pref}_{smok} = DS(t) - \lambda_2 CoS(t) \\
+\text{Pref}_{no-smok} = -DS(t) \\
+\text{Pref}_{reg} = -DS(t) + \lambda_3 PoR \\
 \end{bmatrix} \\\)
-12) Probability of strategy use: \(z_1 = \text{Pref}_{\text{smok}} \\ 
-z_2 = \text{Pref}_{\text{no-smok}} \\ 
-z_3 = \text{Pref}_{\text{reg}} \\
+12) Probability of strategy use: \(z_1 = \text{Pref}_{\text{smok}}(t) \\ 
+z_2 = \text{Pref}_{\text{no-smok}}(t) \\ 
+z_3 = \text{Pref}_{\text{reg}}(t) \\
 P(t) = \begin{bmatrix}
-\text{Prob}_{\text{smok}} = \frac{e^{z_1}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
-\text{Prob}_{\text{no-smok}} = \frac{e^{z_2}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
-\text{Prob}_{\text{reg}} = \frac{e^{z_3}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
+\text{Prob}_{\text{smok}}(t) = \frac{e^{z_1}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
+\text{Prob}_{\text{no-smok}}(t) = \frac{e^{z_2}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
+\text{Prob}_{\text{reg}}(t) = \frac{e^{z_3}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
 \end{bmatrix}\)
 13) Strategy use: \(St(t) = \begin{cases}
-1 & \text{with probability } \text{Prob}_{\text{smok}} \\
-2 & \text{with probability } \text{Prob}_{\text{no-smok}} \\
-3 & \text{with probability } \text{Prob}_{\text{reg}}
+1 & \text{with probability } \text{Prob}_{\text{smok}}(t) \\
+2 & \text{with probability } \text{Prob}_{\text{no-smok}}(t) \\
+3 & \text{with probability } \text{Prob}_{\text{reg}}(t)
 \end{cases}\)
 
 # Progressively build up the functions and simulate data for each before adding the functions together
@@ -90,12 +92,12 @@ We formalise long-acting pharmacotherapy as:
 
 $$
 LAP(t) = \begin{cases}
-1 \times \alpha & \text{if } t = \text{first tick of the day } \\
+1 \times \alpha & \text{if } t = \text{first hour of the day } \\
 0 & \text{otherwise}
 \end{cases}
 $$
 
-where $\alpha$ is a constant which modifies the impact of using long-acting pharmacotherapy on the nicotine withdrawal.
+where $\alpha$ > 0 is a constant which modifies the impact of using long-acting pharmacotherapy on the nicotine withdrawal.
 
 ```{r}
 
@@ -115,14 +117,14 @@ fun_LAP <- function(impulse, alpha) {
   
 }
 
-nTime <- 2880
+nTime <- 8064 # the first 28 days of the quit attempt, in 5-minute ticks
 LAP <- numeric(nTime)
 impulse <- numeric(nTime)
 alpha <- 0.5
 
 for (t in 1:nTime) {
   
-  impulse[t] <- ifelse((t - 1) %% 288 == 0, 1, 0) # checks whether nTime - 1 is divisible by 288, which will be true for the first time tick each day
+  impulse[t] <- ifelse((t - 1) %% 288 == 0, 1, 0) # checks whether nTime - 1 is divisible by 288, which will be true for the first hour each day
   LAP[t] <- fun_LAP(impulse = impulse[t], alpha = alpha)
   
 }  
@@ -237,16 +239,14 @@ ggplot(NW_df, aes(x = nTime)) +
 
 Assumptions about variable:
 
-Assumptions about variable:
-
-- Conceptualised as exposure to highly, rather than moderately, stressful events
+- Conceptualised as exposure to highly stressful events
 - Can take values of 0 or 1 (binary variable)
 - Generally rare, with people expected to be exposed to, on average, a handful of stressors per day
 
 We formalise stressful event as:
 
 $$
-S(t) \sim \text{Bernoulli}(\gamma_1)
+S(t) \sim \text{Bernoulli}(\gamma_1(t))
 $$
 
 where $\gamma_1$ is the probability of being exposed to a stressor.
@@ -275,7 +275,7 @@ S_df <- data.frame(nTime = 1:nTime, S)
 ggplot(S_df, aes(x = nTime)) +
   geom_point(aes(y = S), size = 0.8, shape = 3) +
   labs(x = "Time (in 5-minute ticks)",
-       y = "Stressful event") +
+       y = "Stressors") +
   theme_minimal()
 
 ```
@@ -355,15 +355,15 @@ ggplot(ES_df, aes(x = nTime)) +
 Assumptions about variable:
 
 - Can take values of 0 or 1 (binary variable)
-- Generally frequently encountered, with people expected to be exposed to several cigarette cues per day
+- Frequently encountered, with people expected to be exposed to several cigarette cues per day (e.g., an ashtray, an advert, a lit up cigarette, a tobacco outlet, alcohol, coffee)
 
 We formalise cigarette cue as:
 
 $$
-CC(t) \sim \text{Bernoulli}(\epsilon_1)
+CC(t) \sim \text{Bernoulli}(\epsilon_1(t))
 $$
 
-where $\epsilon_1$ is the probability of encountering a cigarette cue (e.g., an ashtray, an advert, a lit up cigarette, a tobacco outlet, alcohol, coffee).
+where $\epsilon_1$ is the probability of encountering a cigarette cue.
 
 ```{r}
 
@@ -471,7 +471,7 @@ Assumptions about variable:
 - Conceptualised as the subjective experience of wanting to smoke, which is caused by the nicotine withdrawal, stressors and cigarette cues
 - Can take values between 0 and 10
 - Although the nicotine withdrawal declines over time, as stressors and cigarette cues fluctuate over the course of the day, the craving to smoke can also fluctuate dramatically over the course of the day
-- If a regulatory strategy is used at the previous time tick, this reduces the craving to smoke; the magnitude of the reduction is expected to depend on whether it's a pharmacological or non-pharmacological strategy
+- If a regulatory strategy is used at the previous time tick, this reduces the craving to smoke; the magnitude of the reduction is expected to depend on whether a pharmacological or non-pharmacological strategy was used
 
 We formalise the craving to smoke as:
 
@@ -560,7 +560,7 @@ Assumptions about variable:
 We formalise the permissibility of smoking as:
 
 $$
-PE(t) \sim \text{Bernoulli}(\theta_1)
+PE(t) \sim \text{Bernoulli}(\theta_1(t))
 $$
 
 where $\theta_1$ is the probability of being in a physical or social context in which smoking is perceived as permissible.
@@ -731,60 +731,64 @@ Assumptions about variable:
 
 - The strategy preference is formed through the interplay of craving to smoke, motivation not to smoke, the cost of smoking to the most salient self-concept and the possibility to regulate
 - The cost of smoking is a rapid mental comparison of smoking with the most salient self-concept at that moment in time, which may be consistent (i.e., low cost to the self-concept) or inconsistent with smoking (i.e., high cost to the self-concept)
-- The possibility to regulate reflects whether trying to regulate is possible at that moment in time
+- The possibility to regulate represents if it is possible to try to regulate at that moment in time (i.e., the person is not otherwise preoccupied)
 - The function to calculate the preferences for how to act in each moment is not identical to, but borrows its form from, discrete choice models, cost-benefit models, and payoff/fitness models
 
 We formalise strategy preference as:
 
 $$
-
+DS(t) = \lambda_1 C(t) - (1-\lambda_1) M(t) \\
+\\
 SP(t) = \begin{bmatrix}
-\text{Pref}_{smok} = \lambda_1 C(t) - \lambda_2 M(t) - \lambda_3 CoS(t) \\
-\text{Pref}_{no-smok} = \lambda_2 M(t) - \lambda_1 C(t) \\
-\text{Pref}_{reg} = \lambda_2 M(t) - \lambda_1 C(t) - \lambda_4 PoR
-\end{bmatrix}
+\text{Pref}_{smok} = DS(t) - \lambda_2 CoS(t) \\
+\text{Pref}_{no-smok} = -DS(t) \\
+\text{Pref}_{reg} = -DS(t) + \lambda_3 PoR \\
+\end{bmatrix} \\
 $$
 
-where $\lambda_1$, $\lambda_2$, $\lambda_3$ and $\lambda_4$ represent weight parameters.
+where DS(t) is the contribution of the desire to smoke from both the craving to smoke, C(t), and the motivation not to smoke, M(t), and $\lambda_1$, $\lambda_2$, and $\lambda_3$ are parameters which determine the strength of influence of the craving to smoke, the motivation not to smoke, the cost of smoking to the most salient self-concept and the possibility of regulating on the strategy preference estimation.
 
 ```{r}
 
 ### strategy preference
 
-fun_SP <- function(C, M, CoS, PoR, lambda1, lambda2, lambda3, lambda4) {
+fun_SP <- function(C, M, CoS, PoR, lambda1, lambda2, lambda3) {
   
-  value_smok <- sum((lambda1 * C) - (lambda2 * M) - (lambda3 * CoS))
-  value_no_smok <- sum((lambda2 * M) - (lambda1 * C))
-  value_reg <- sum((lambda2 * M) - (lambda1 * C) - (lambda4 * PoR))
+  DS <- sum((lambda1 * C) - ((1 - lambda1) * M))
+  value_smok <- DS - (lambda2 * CoS)
+  value_no_smok <- -DS
+  value_reg <- -DS + (lambda3 * PoR)
   
-  return(list(value_smok = value_smok, 
+  return(list(DS = DS,
+              value_smok = value_smok, 
               value_no_smok = value_no_smok,
               value_reg = value_reg))
 }
 
 C <- C # generated in above function
 M <- M # generated in above function
-CoS <- rnorm(nTime, mean = 3, sd = 3)
+CoS <- rnorm(nTime, mean = 5, sd = 3)
 PoR <- rnorm(nTime, mean = 3, sd = 3)
+DS <- numeric(nTime)
 value_smok <- numeric(nTime)
 value_no_smok <- numeric(nTime)
 value_reg <- numeric(nTime)
 lambda1 <- 0.1 
 lambda2 <- 0.2 
-lambda3 <- 0.3 
-lambda4 <- 0.4
+lambda3 <- 0.3
 
 for (t in 1:nTime) {
   
-  result <- fun_SP(C = C[t], M = M[t], CoS = CoS[t], PoR = PoR[t], lambda1 = lambda1, lambda2 = lambda2, lambda3 = lambda3, lambda4 = lambda4)
+  result <- fun_SP(C = C[t], M = M[t], CoS = CoS[t], PoR = PoR[t], lambda1 = lambda1, lambda2 = lambda2, lambda3 = lambda3)
   
+  DS[t] <- round(result$DS)
   value_smok[t] <- round(result$value_smok)
   value_no_smok[t] <- round(result$value_no_smok)
   value_reg[t] <- round(result$value_reg)
   
 }
 
-SP_df <- data.frame(nTime = 1:nTime, C, M, CoS, PoR, value_smok, value_no_smok, value_reg)
+SP_df <- data.frame(nTime = 1:nTime, C, M, CoS, PoR, DS, value_smok, value_no_smok, value_reg)
 
 ggplot(SP_df, aes(x = nTime)) +
   geom_point(aes(y = value_smok), colour = "darkred") +
@@ -807,14 +811,14 @@ Assumptions about variable:
 We formalise the probability of strategy use as:
 
 $$
-z_1 = \text{Pref}_{\text{smok}}, \quad z_2 = \text{Pref}_{\text{no-smok}}, \quad z_3 = \text{Pref}_{\text{reg}}
+z_1 = \text{Pref}_{\text{smok}}(t), \quad z_2 = \text{Pref}_{\text{no-smok}}(t), \quad z_3 = \text{Pref}_{\text{reg}}(t)
 $$
 
 $$
 P(t) = \begin{bmatrix}
-\text{Prob}_{\text{smok}} = \frac{e^{z_1}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
-\text{Prob}_{\text{no-smok}} = \frac{e^{z_2}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
-\text{Prob}_{\text{reg}} = \frac{e^{z_3}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
+\text{Prob}_{\text{smok}}(t) = \frac{e^{z_1}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
+\text{Prob}_{\text{no-smok}}(t) = \frac{e^{z_2}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
+\text{Prob}_{\text{reg}}(t) = \frac{e^{z_3}}{e^{z_1} + e^{z_2} + e^{z_3}} \\
 \end{bmatrix}
 $$
 
@@ -869,16 +873,16 @@ SP_P_df <- data.frame(nTime = 1:nTime, C, M, value_smok, P_smok, value_no_smok, 
 
 Assumptions about variable:
 
-- The strategy is selected probabilistically from the three possible strategies, on the basis of the scaled probabilities generated
-- The strategy selected differentially impacts the system dynamics further downstream (specified in the above functions)
+- The strategy is selected probabilistically from the three possible behavioural options, based on the scaled probabilities
+- The strategy selected differentially impacts the system dynamics further downstream, as specified in the other functions
 
 We formalise strategy use as:
 
 $$
 St(t) = \begin{cases}
-1 & \text{with probability } \text{Prob}_{\text{smok}} \\
-2 & \text{with probability } \text{Prob}_{\text{no-smok}} \\
-3 & \text{with probability } \text{Prob}_{\text{reg}}
+1 & \text{with probability } \text{Prob}_{\text{smok}}(t) \\
+2 & \text{with probability } \text{Prob}_{\text{no-smok}}(t) \\
+3 & \text{with probability } \text{Prob}_{\text{reg}}(t)
 \end{cases}
 $$
 
@@ -1106,13 +1110,15 @@ fun_M <- function(kappa1, SE, kappa2, transformed_PE) {
 
 ### strategy preference
 
-fun_SP <- function(C, M, CoS, PoR, lambda1, lambda2, lambda3, lambda4) {
+fun_SP <- function(C, M, CoS, PoR, lambda1, lambda2, lambda3) {
   
-  value_smok <- sum((lambda1 * C) - (lambda2 * M) - (lambda3 * CoS))
-  value_no_smok <- sum((lambda2 * M) - (lambda1 * C))
-  value_reg <- sum((lambda2 * M) - (lambda1 * C) - (lambda4 * PoR))
+  DS <- (lambda1 * C) - ((1 - lambda1) * M)
+  value_smok <- DS - (lambda2 * CoS)
+  value_no_smok <- -DS
+  value_reg <- -DS + (lambda3 * PoR)
   
-  return(list(value_smok = value_smok, 
+  return(list(DS = DS,
+              value_smok = value_smok, 
               value_no_smok = value_no_smok,
               value_reg = value_reg))
 }
@@ -1142,7 +1148,7 @@ fun_St <- function(P) {
 
 ```{r}
 
-nTime <- 2880
+nTime <- 8064 # the first 28 days of the quit attempt, in 5-minute ticks
 LAP <- numeric(nTime)
 impulse <- numeric(nTime)
 NW <- numeric(nTime)
@@ -1157,15 +1163,16 @@ PE <- numeric(nTime)
 transformed_PE <- numeric(nTime)
 SE <- numeric(nTime)
 M <- numeric(nTime)
-CoS <- rnorm(nTime, mean = 3, sd = 3)
+CoS <- rnorm(nTime, mean = 5, sd = 3)
 PoR <- rnorm(nTime, mean = 3, sd = 3)
+DS <- numeric(nTime)
 value_smok <- numeric(nTime)
 value_no_smok <- numeric(nTime)
 value_reg <- numeric(nTime)
 P <- vector("list", length = nTime)
 
 params <- list(
-  nTime = 2880,
+  nTime = 8064,
   alpha = 0.5,
   beta1 = 0.997,
   beta2 = 0.02,
@@ -1190,9 +1197,8 @@ params <- list(
   lambda1 = 0.1,
   lambda2 = 0.2,
   lambda3 = 0.3,
-  lambda4 = 0.4,
   str_scenario = 0,
-  ### starting conditions
+  ### initial conditions
   NW_init = 8,
   ES_init = 3,
   CR_init = 3,
@@ -1200,7 +1206,7 @@ params <- list(
 
 ```
 
-### Run the simulation and plot results
+### Run the simulation and plot the results
 
 ```{r}
 
@@ -1272,8 +1278,9 @@ for (t in 1:nTime) {
     M[t] <- 10
   }
   
-  result <- fun_SP(C = C[t], M = M[t], CoS = CoS[t], PoR = PoR[t], lambda1 = params$lambda1, lambda2 = params$lambda2, lambda3 = params$lambda3, lambda4 = params$lambda4)
+  result <- fun_SP(C = C[t], M = M[t], CoS = CoS[t], PoR = PoR[t], lambda1 = params$lambda1, lambda2 = params$lambda2, lambda3 = params$lambda3)
   
+  DS[t] <- round(result$DS)
   value_smok[t] <- round(result$value_smok)
   value_no_smok[t] <- round(result$value_no_smok)
   value_reg[t] <- round(result$value_reg)

@@ -1,23 +1,35 @@
 library(here)
 library(tidyverse)
+library(rcartocolor)
 library(plotly)
 library(DT)
 library(shiny)
 library(shinydashboard)
 
-source(here("scripts", "2_model_functions.R"))
+source(here("www", "2_model_functions.R"))
+scenarios <- read_csv(here("www", "scenarios.csv"))
+#rmarkdown::render(input = here("www", "welcome.Rmd"), output_format = "html_document", output_file = here("www", "welcome.html"))
 
-scenarios <- read_csv(here("Shiny_app", "scenarios.csv"))
-
-rmarkdown::render(here("Shiny_app", "welcome.Rmd"), output_format = "html_document", output_file = "welcome.html")
+# Colour palette for plots
+colours_1 <- carto_pal(n = 6, name = "DarkMint")
+colours_2 <- carto_pal(n = 3, name = "Magenta")
+colours_3 <- carto_pal(n = 3, name = "Peach")
 
 # define UI
 
 ui <- fluidPage(
   navbarPage("COMPLAPSE Simulation Tool", fluid = TRUE,
              tabPanel("Welcome",
-                      htmlOutput("welcome")),
-             tabPanel("Simulation Scenarios",
+                      fluidPage(
+                        tags$h2("Welcome to Project COMPLAPSE"),
+                        tags$p("This R Shiny application was built to enable interested readers to explore the formal and computational model developed as part of Project COMPLAPSE."),
+                        tags$p("This R Shiny application includes the following tabs:"),
+                        tags$ul(
+                          tags$li(tags$strong("Pre-Specified Simulation Scenarios"), " (contains a few pre-specified simulations, using the parameter sets from the estimation procedure)"),
+                          tags$li(tags$strong("Global Simulation Environment"), " (environment in which all model parameters can be tuned via sliders)")
+                        )
+                      )),
+             tabPanel("Pre-Specified Simulation Scenarios",
                       tags$style(HTML("
            .scenario-box {
              background-color: #f9f9f9;
@@ -66,12 +78,12 @@ ui <- fluidPage(
                     tabPanel("Cues", 
                              plotOutput("scenB_summary_cues"))
                   )))),
-         tabPanel(title = "Simulation Environment",
+         tabPanel(title = "Global Simulation Environment",
                   sidebarLayout(
                     sidebarPanel(
                       tabsetPanel(
                         tabPanel("Simulation time",
-                                 sliderInput("nTime", "Time (in 5-minute ticks):", min = 2880, max = 8640, value = 2880)), # first 30 days of quit attempt
+                                 sliderInput("nTime", "Time (in 5-minute ticks):", min = 2880, max = 8064, value = 8064)), # first 28 days of the quit attempt
                         tabPanel("Starting conditions",
                                  sliderInput("NW_init", "Nicotine withdrawal:", min = 0, max = 10, value = 8),
                                  sliderInput("ES_init", "Experienced stress:", min = 0, max = 10, value = 3),
@@ -82,32 +94,36 @@ ui <- fluidPage(
                         tabPanel("Long-acting pharmacotherapy",
                                  sliderInput("alpha", "The impact of using long-acting pharmacotherapy (alpha):", min = 0, max = 3, value = 0)),
                         tabPanel("Nicotine withdrawal",
-                                 sliderInput("beta1", "The decay of the background craving (beta1):", min = 0, max = 1, value = 0.997),
-                                 sliderInput("beta2", "The short-term impact of a smoking episode on the background craving (beta2):", min = 0, max = 1, value = 0.02),
-                                 sliderInput("beta3", "The long-term impact of a smoking episode on the background craving (beta3):", min = 0, max = 1, value = 0.1)),
+                                 sliderInput("beta1", "The decay of the background craving (beta1):", min = 0, max = 1, value = 0.95),
+                                 sliderInput("beta2", "The short-term impact of a smoking episode on the background craving (beta2):", min = 0, max = 1, value = 0.1),
+                                 sliderInput("beta3", "The long-term impact of a smoking episode on the background craving (beta3):", min = 0, max = 1, value = 0.3)),
                         tabPanel("Stressors",
-                                 sliderInput("gamma1", "The probability of encountering a stressor (gamma1):", min = 0, max = 0.3, value = 0.005)),
+                                 sliderInput("gamma1", "The probability of encountering a stressor (gamma1):", min = 0, max = 0.3, value = 0.1)),
                         tabPanel("Experienced stress",
-                                 sliderInput("delta1", "Decay of previous stress (gamma1):", min = 0.5, max = 1, value = 0.98),
-                                 sliderInput("delta2", "The impact of a recent stressor (gamma2:", min = 0, max = 5, value = 3)),
+                                 sliderInput("delta1", "Decay of previous stress (gamma1):", min = 0, max = 1, value = 0.95),
+                                 sliderInput("delta2", "The impact of a recent stressor (gamma2:", min = 0, max = 5, value = 2)),
                         tabPanel("Cigarette cues",
-                                 sliderInput("epsilon1", "The probability of encountering a cigarette cue (epsilon1):", min = 0, max = 0.3, value = 0.02)),
+                                 sliderInput("epsilon1", "The probability of encountering a cigarette cue (epsilon1):", min = 0, max = 0.3, value = 0.1)),
                         tabPanel("Cue reactivity",
-                                 sliderInput("zeta1", "Decay of previous cigarette cue (zeta1):", min = 0.5, max = 1, value = 0.98),
-                                 sliderInput("zeta2", "The impact of a recent cigarette cue (zeta2:", min = 0, max = 5, value = 3)),
+                                 sliderInput("zeta1", "Decay of previous cigarette cue (zeta1):", min = 0, max = 1, value = 0.45),
+                                 sliderInput("zeta2", "The impact of a recent cigarette cue (zeta2:", min = 0, max = 5, value = 2)),
                         tabPanel("Craving to smoke",
-                                 sliderInput("eta1", "The influence of the nicotine withdrawal on the craving (eta1):", min = 0.5, max = 1, value = 0.7),
-                                 sliderInput("eta2", "The influence of the experieneced stress on the craving (eta2):", min = 0, max = 5, value = 3),
-                                 sliderInput("eta3", "The influence of the cue reactivity on the craving (eta3):", min = 0, max = 5, value = 1),
-                                 sliderInput("eta4", "The impact of having recently used a regulatory strategy on the craving (eta4):", min = 0, max = 5, value = 3)),
+                                 sliderInput("eta1", "The influence of the nicotine withdrawal on the craving (eta1):", min = 0, max = 1, value = 0.5),
+                                 sliderInput("eta2", "The influence of the experieneced stress on the craving (eta2):", min = 0, max = 1, value = 0.45),
+                                 sliderInput("eta3", "The influence of the cue reactivity on the craving (eta3):", min = 0, max = 1, value = 0.35),
+                                 sliderInput("eta4", "The impact of having recently used a regulatory strategy on the craving (eta4):", min = 0, max = 1, value = 0.35)),
                         tabPanel("Perceived permissibility of smoking",
-                                 sliderInput("theta1", "The probability of being in a context where smoking is perceived as permissible (theta1):", min = 0, max = 0.5, value = 0.2)),
+                                 sliderInput("theta1", "The probability of being in a context where smoking is perceived as permissible (theta1):", min = 0, max = 0.5, value = 0.25)),
                         tabPanel("Self-efficacy",
-                                 sliderInput("iota1", "The growth of self-efficacy (iota1):", min = 1, max = 1.01, value = 1.0015),
-                                 sliderInput("iota2", "The impact of a recent lapse on the self-efficacy (iota2):", min = 0, max = 1, value = 0.1)),
+                                 sliderInput("iota1", "The growth of self-efficacy (iota1):", min = 1, max = 1.1, value = 1.0015),
+                                 sliderInput("iota2", "The impact of a recent lapse on the self-efficacy (iota2):", min = 0, max = 1, value = 0.35)),
                         tabPanel("Motivation not to smoke",
-                                 sliderInput("kappa1", "The impact of self-efficacy on motivation (kappa1):", min = 0, max = 1, value = 0.8),
-                                 sliderInput("kappa2", "The impact of the perceived permissibility of smoking on motivation (kappa2):", min = 0, max = 5, value = 2)),
+                                 sliderInput("kappa1", "The impact of self-efficacy on motivation (kappa1):", min = 0, max = 1, value = 0.95),
+                                 sliderInput("kappa2", "The impact of the perceived permissibility of smoking on motivation (kappa2):", min = 0, max = 5, value = 1)),
+                        tabPanel("Strategy preference",
+                                 sliderInput("lambda1", "The contribution of the craving and motivation to the strategy preference estimation (lambda1):", min = 0, max = 1, value = 0.3),
+                                 sliderInput("lambda2", "The contribution of the cost of smoking to the most salient self-concept to the strategy preference estimation (lambda2):", min = 0, max = 1, value = 0.3),
+                                 sliderInput("lambda3", "The contribution of the possibility of regulating to the strategy preference estimation (lambda3):", min = 0, max = 1, value = 0.2)),
                         footer = div(
                           actionButton("runSimulationBtn", "Run simulation"),
                           actionButton("defaultParamsBtn", "Set to default parameters"),
@@ -130,31 +146,30 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   default_params <- list(
-    nTime = 2880,
-    alpha = 0.5,
-    beta1 = 0.997,
-    beta2 = 0.02,
-    beta3 = 0.1,
-    gamma1 = 0.005,
-    delta1 = 0.98,
-    delta2 = 4,
+    nTime = 8064,
+    alpha = 0,
+    beta1 = 0.95,
+    beta2 = 0.1,
+    beta3 = 0.3,
+    gamma1 = 0.1,
+    delta1 = 0.95,
+    delta2 = 2,
     epsilon1 = 0.1,
-    zeta1 = 0.95,
-    zeta2 = 4,
-    eta1 = 0.4,
-    eta2 = 0.3,
-    eta3 = 0.3,
-    eta4 = 0.1,
-    eta5 = 0.3,
-    theta1 = 0.5,
-    iota1 = 1.0015,
-    iota2 = 0.1,
-    kappa1 = 0.9,
-    kappa2 = 1.2,
-    lambda1 = 0.1,
-    lambda2 = 0.2,
-    lambda3 = 0.3,
-    lambda4 = 0.4,
+    zeta1 = 0.45,
+    zeta2 = 2,
+    eta1 = 0.5,
+    eta2 = 0.45,
+    eta3 = 0.35,
+    eta4 = 0.35,
+    eta5 = 0.45,
+    theta1 = 0.25,
+    iota1 = 1.105,
+    iota2 = 0.35,
+    kappa1 = 0.95,
+    kappa2 = 1,
+    lambda1 = 0.3,
+    lambda2 = 0.3,
+    lambda3 = 0.2,
     str_scenario = 0,
     NW_init = 8,
     ES_init = 3,
@@ -193,7 +208,6 @@ server <- function(input, output, session) {
     updateSliderInput(session, "lambda1", value = default_params$lambda1)
     updateSliderInput(session, "lambda2", value = default_params$lambda2)
     updateSliderInput(session, "lambda3", value = default_params$lambda3)
-    updateSliderInput(session, "lambda4", value = default_params$lambda4)
     updateSliderInput(session, "str_scenario", value = default_params$str_scenario)
     
   })
@@ -223,7 +237,6 @@ server <- function(input, output, session) {
          lambda1 = input$lambda1,
          lambda2 = input$lambda2,
          lambda3 = input$lambda3,
-         lambda4 = input$lambda4,
          str_scenario = input$str_scenario,
          NW_init = input$NW_init,
          ES_init = input$ES_init,
@@ -268,18 +281,18 @@ server <- function(input, output, session) {
     
     p <- plot_ly(data = sim_results$data,
                  x = ~nTime) %>%
-      add_lines(y = ~NW, type = 'scatter', mode = 'lines', name = "Nicotine withdrawal", visible = "legendonly") %>%
-      add_lines(y = ~S, type = 'scatter', mode = 'lines', name = "Stressors", visible = "legendonly") %>%
-      add_lines(y = ~ES, type = 'scatter', mode = 'lines', name = "Experienced stress", visible = "legendonly") %>%
-      add_lines(y = ~CC, type = 'scatter', mode = 'lines', name = "Cigarette cues", visible = "legendonly") %>%
-      add_lines(y = ~CR, type = 'scatter', mode = 'lines', name = "Cue reactivity", visible = "legendonly") %>%
-      add_lines(y = ~C, type = 'scatter', mode = 'lines', name = "Craving to smoke", visible = TRUE) %>%
-      add_lines(y = ~transformed_PE, type = 'scatter', mode = 'lines', name = "Perceived permissibility of smoking", visible = "legendonly") %>%
-      add_lines(y = ~SE, type = 'scatter', mode = 'lines', name = "Self-efficacy", visible = "legendonly") %>%
-      add_lines(y = ~M, type = 'scatter', mode = 'lines', name = "Motivation not to smoke", visible = TRUE) %>%
-      add_lines(y = ~smok, type = 'scatter', mode = 'lines', name = "Smoke", visible = TRUE) %>%
-      add_lines(y = ~no_smok, type = 'scatter', mode = 'lines', name = "No smoke", visible = "legendonly") %>%
-      add_lines(y = ~reg, type = 'scatter', mode = 'lines', name = "Use regulatory strategy", visible = "legendonly")
+      add_lines(y = ~NW, type = 'scatter', mode = 'lines', name = "Nicotine withdrawal", visible = "legendonly", line = list(color = colours_1[6])) %>%
+      add_lines(y = ~S, type = 'scatter', mode = 'lines', name = "Stressors", visible = "legendonly", line = list(color = colours_1[5])) %>%
+      add_lines(y = ~ES, type = 'scatter', mode = 'lines', name = "Experienced stress", visible = "legendonly", line = list(color = colours_1[4])) %>%
+      add_lines(y = ~CC, type = 'scatter', mode = 'lines', name = "Cigarette cues", visible = "legendonly", line = list(color = colours_1[1])) %>%
+      add_lines(y = ~CR, type = 'scatter', mode = 'lines', name = "Cue reactivity", visible = "legendonly", line = list(color = colours_1[2])) %>%
+      add_lines(y = ~C, type = 'scatter', mode = 'lines', name = "Craving to smoke", visible = TRUE, line = list(color = colours_1[3])) %>%
+      add_lines(y = ~transformed_PE, type = 'scatter', mode = 'lines', name = "Perceived permissibility of smoking", visible = "legendonly", line = list(color = colours_2[3])) %>%
+      add_lines(y = ~SE, type = 'scatter', mode = 'lines', name = "Self-efficacy", visible = "legendonly", line = list(color = colours_2[1])) %>%
+      add_lines(y = ~M, type = 'scatter', mode = 'lines', name = "Motivation not to smoke", visible = TRUE, line = list(color = colours_2[2])) %>%
+      add_lines(y = ~smok, type = 'scatter', mode = 'lines', name = "Smoke", visible = TRUE, line = list(color = colours_3[3])) %>%
+      add_lines(y = ~no_smok, type = 'scatter', mode = 'lines', name = "Do nothing", visible = "legendonly", line = list(color = colours_3[2])) %>%
+      add_lines(y = ~reg, type = 'scatter', mode = 'lines', name = "Use regulatory strategy", visible = "legendonly", line = list(color = colours_3[1]))
     
     # add layout options
     p <- p %>% layout(title = "Simulation Data Plot",
@@ -410,18 +423,18 @@ server <- function(input, output, session) {
     
     p <- plot_ly(data = scenario_A_results$data,
                  x = ~nTime) %>%
-      add_lines(y = ~NW, type = 'scatter', mode = 'lines', name = "Nicotine withdrawal", visible = "legendonly") %>%
-      add_lines(y = ~S, type = 'scatter', mode = 'lines', name = "Stressors", visible = "legendonly") %>%
-      add_lines(y = ~ES, type = 'scatter', mode = 'lines', name = "Experienced stress", visible = "legendonly") %>%
-      add_lines(y = ~CC, type = 'scatter', mode = 'lines', name = "Cigarette cues", visible = "legendonly") %>%
-      add_lines(y = ~CR, type = 'scatter', mode = 'lines', name = "Cue reactivity", visible = "legendonly") %>%
-      add_lines(y = ~C, type = 'scatter', mode = 'lines', name = "Craving to smoke", visible = TRUE) %>%
-      add_lines(y = ~transformed_PE, type = 'scatter', mode = 'lines', name = "Perceived permissibility of smoking", visible = "legendonly") %>%
-      add_lines(y = ~SE, type = 'scatter', mode = 'lines', name = "Self-efficacy", visible = "legendonly") %>%
-      add_lines(y = ~M, type = 'scatter', mode = 'lines', name = "Motivation not to smoke", visible = TRUE) %>%
-      add_lines(y = ~smok, type = 'scatter', mode = 'lines', name = "Smoke", visible = TRUE) %>%
-      add_lines(y = ~no_smok, type = 'scatter', mode = 'lines', name = "No smoke", visible = "legendonly") %>%
-      add_lines(y = ~reg, type = 'scatter', mode = 'lines', name = "Use regulatory strategy", visible = "legendonly")
+      add_lines(y = ~NW, type = 'scatter', mode = 'lines', name = "Nicotine withdrawal", visible = "legendonly", line = list(color = colours_1[6])) %>%
+      add_lines(y = ~S, type = 'scatter', mode = 'lines', name = "Stressors", visible = "legendonly", line = list(color = colours_1[5])) %>%
+      add_lines(y = ~ES, type = 'scatter', mode = 'lines', name = "Experienced stress", visible = "legendonly", line = list(color = colours_1[4])) %>%
+      add_lines(y = ~CC, type = 'scatter', mode = 'lines', name = "Cigarette cues", visible = "legendonly", line = list(color = colours_1[1])) %>%
+      add_lines(y = ~CR, type = 'scatter', mode = 'lines', name = "Cue reactivity", visible = "legendonly", line = list(color = colours_1[2])) %>%
+      add_lines(y = ~C, type = 'scatter', mode = 'lines', name = "Craving to smoke", visible = TRUE, line = list(color = colours_1[3])) %>%
+      add_lines(y = ~transformed_PE, type = 'scatter', mode = 'lines', name = "Perceived permissibility of smoking", visible = "legendonly", line = list(color = colours_2[3])) %>%
+      add_lines(y = ~SE, type = 'scatter', mode = 'lines', name = "Self-efficacy", visible = "legendonly", line = list(color = colours_2[1])) %>%
+      add_lines(y = ~M, type = 'scatter', mode = 'lines', name = "Motivation not to smoke", visible = TRUE, line = list(color = colours_2[2])) %>%
+      add_lines(y = ~smok, type = 'scatter', mode = 'lines', name = "Smoke", visible = TRUE, line = list(color = colours_3[3])) %>%
+      add_lines(y = ~no_smok, type = 'scatter', mode = 'lines', name = "Do nothing", visible = "legendonly", line = list(color = colours_3[2])) %>%
+      add_lines(y = ~reg, type = 'scatter', mode = 'lines', name = "Use regulatory strategy", visible = "legendonly", line = list(color = colours_3[1]))
     
     # add layout options
     p <- p %>% layout(title = "",
@@ -448,7 +461,8 @@ server <- function(input, output, session) {
     # need to sort out the fill scale so it is consistent across plots and matches to all possible levels (not just those in the data)
     ggplot(data = summary_scenA) +
       geom_col(aes(x = day, y = n, fill = strategy)) +
-      scale_fill_viridis_d() +
+      scale_fill_viridis_d(labels = c("Smoke", "Do nothing", "Use regulatory strategy"),
+                           option = "mako") +
       theme_bw() +
       xlab("Day in the study") +
       ylab("") +
@@ -547,18 +561,18 @@ server <- function(input, output, session) {
     
     p <- plot_ly(data = scenario_B_results$data,
                  x = ~nTime) %>%
-      add_lines(y = ~NW, type = 'scatter', mode = 'lines', name = "Nicotine withdrawal", visible = "legendonly") %>%
-      add_lines(y = ~S, type = 'scatter', mode = 'lines', name = "Stressors", visible = "legendonly") %>%
-      add_lines(y = ~ES, type = 'scatter', mode = 'lines', name = "Experienced stress", visible = "legendonly") %>%
-      add_lines(y = ~CC, type = 'scatter', mode = 'lines', name = "Cigarette cues", visible = "legendonly") %>%
-      add_lines(y = ~CR, type = 'scatter', mode = 'lines', name = "Cue reactivity", visible = "legendonly") %>%
-      add_lines(y = ~C, type = 'scatter', mode = 'lines', name = "Craving to smoke", visible = TRUE) %>%
-      add_lines(y = ~transformed_PE, type = 'scatter', mode = 'lines', name = "Perceived permissibility of smoking", visible = "legendonly") %>%
-      add_lines(y = ~SE, type = 'scatter', mode = 'lines', name = "Self-efficacy", visible = "legendonly") %>%
-      add_lines(y = ~M, type = 'scatter', mode = 'lines', name = "Motivation not to smoke", visible = TRUE) %>%
-      add_lines(y = ~smok, type = 'scatter', mode = 'lines', name = "Smoke", visible = TRUE) %>%
-      add_lines(y = ~no_smok, type = 'scatter', mode = 'lines', name = "No smoke", visible = "legendonly") %>%
-      add_lines(y = ~reg, type = 'scatter', mode = 'lines', name = "Use regulatory strategy", visible = "legendonly")
+      add_lines(y = ~NW, type = 'scatter', mode = 'lines', name = "Nicotine withdrawal", visible = "legendonly", line = list(color = colours_1[6])) %>%
+      add_lines(y = ~S, type = 'scatter', mode = 'lines', name = "Stressors", visible = "legendonly", line = list(color = colours_1[5])) %>%
+      add_lines(y = ~ES, type = 'scatter', mode = 'lines', name = "Experienced stress", visible = "legendonly", line = list(color = colours_1[4])) %>%
+      add_lines(y = ~CC, type = 'scatter', mode = 'lines', name = "Cigarette cues", visible = "legendonly", line = list(color = colours_1[1])) %>%
+      add_lines(y = ~CR, type = 'scatter', mode = 'lines', name = "Cue reactivity", visible = "legendonly", line = list(color = colours_1[2])) %>%
+      add_lines(y = ~C, type = 'scatter', mode = 'lines', name = "Craving to smoke", visible = TRUE, line = list(color = colours_1[3])) %>%
+      add_lines(y = ~transformed_PE, type = 'scatter', mode = 'lines', name = "Perceived permissibility of smoking", visible = "legendonly", line = list(color = colours_2[3])) %>%
+      add_lines(y = ~SE, type = 'scatter', mode = 'lines', name = "Self-efficacy", visible = "legendonly", line = list(color = colours_2[1])) %>%
+      add_lines(y = ~M, type = 'scatter', mode = 'lines', name = "Motivation not to smoke", visible = TRUE, line = list(color = colours_2[2])) %>%
+      add_lines(y = ~smok, type = 'scatter', mode = 'lines', name = "Smoke", visible = TRUE, line = list(color = colours_3[3])) %>%
+      add_lines(y = ~no_smok, type = 'scatter', mode = 'lines', name = "Do nothing", visible = "legendonly", line = list(color = colours_3[2])) %>%
+      add_lines(y = ~reg, type = 'scatter', mode = 'lines', name = "Use regulatory strategy", visible = "legendonly", line = list(color = colours_3[1]))
     
     # add layout options
     p <- p %>% layout(title = "",
@@ -582,7 +596,8 @@ server <- function(input, output, session) {
     # need to sort out the fill scale so it is consistent across plots and matches to all possible levels (not just those in the data)
     ggplot(data = summary_scenB) +
       geom_col(aes(x = day, y = n, fill = strategy)) +
-      scale_fill_viridis_d(labels = c("Smoke", "Do nothing", "Use regulatory strategy")) +
+      scale_fill_viridis_d(labels = c("Smoke", "Do nothing", "Use regulatory strategy"),
+                           option = "mako") +
       theme_bw() +
       xlab("Day in the study") +
       ylab("") +

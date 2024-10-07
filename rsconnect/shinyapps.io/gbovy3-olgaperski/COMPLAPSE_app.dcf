@@ -5,7 +5,7 @@ account: gbovy3-olgaperski
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 12439475
-bundleId:
+bundleId: 9192719
 url: https://gbovy3-olgaperski.shinyapps.io/COMPLAPSE_app/
 version: 1
 asMultiple: FALSE
